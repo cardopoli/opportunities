@@ -123,12 +123,13 @@ def people(presets: dict) -> list[dict]:
                 continue
             out.append({'name': entry.get('name') or prof.get('name', ''), 'email': entry['email'], 'profile': prof})
         return out
-    to = os.environ.get('DIGEST_TO', '').strip()
+    to = ''.join(os.environ.get('DIGEST_TO', '').split())
     return [{'name': '', 'email': to, 'profile': p} for p in presets.values()]
 
 
 def send(to: str, subject: str, text: str, html_body: str) -> bool:
-    user, password = (os.environ.get(k, '').strip() for k in ('DIGEST_GMAIL_USER', 'DIGEST_GMAIL_APP_PASSWORD'))
+    # Pasted values can carry invisible non-breaking spaces (Google shows the code in groups).
+    user, password = (''.join(os.environ.get(k, '').split()) for k in ('DIGEST_GMAIL_USER', 'DIGEST_GMAIL_APP_PASSWORD'))
     if not (user and password and to):
         return False
     msg = EmailMessage()
@@ -136,7 +137,7 @@ def send(to: str, subject: str, text: str, html_body: str) -> bool:
     msg.set_content(text)
     msg.add_alternative(html_body, subtype='html')
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=30) as smtp:
-        smtp.login(user, password.replace(' ', ''))
+        smtp.login(user, password)
         smtp.send_message(msg)
     return True
 
