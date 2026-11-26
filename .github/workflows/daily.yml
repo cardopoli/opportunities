@@ -16,9 +16,6 @@ jobs:
   update:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -52,11 +49,22 @@ jobs:
             git reset --hard origin/main
             cp /tmp/opportunities.json data/opportunities.json
           done
+      - name: Keep test caches out of the site
+        run: find . -name '__pycache__' -type d -prune -exec rm -rf {} +
       - uses: actions/upload-pages-artifact@v4
         with:
           path: '.'
-      - uses: actions/deploy-pages@v4
-        id: deployment
       - name: Report failed check
         if: steps.collect.outcome == 'failure'
         run: exit 1
+  # Publishing runs as its own job, once the upload is fully registered.
+  deploy:
+    needs: update
+    if: always() && needs.update.result != 'cancelled'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
