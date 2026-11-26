@@ -96,6 +96,17 @@ footer{margin-top:50px;border-top:1px solid var(--fg);padding-top:12px;font-size
 .picked{font-size:12px;color:var(--muted);margin:8px 0 0}.preview{font-weight:700;margin:14px 0 0}
 .why{font-size:12px;color:var(--accent-ink);margin-top:3px}
 @media(max-width:900px){.builder .grid{grid-template-columns:1fr}}
+.how{border-top:4px solid var(--fg);margin:28px 0 0;padding-top:10px}
+.how-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.how h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:0}
+.how ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin:12px 0 0}
+.how li{counter-increment:how}.how li::before{content:counter(how);display:block;font-size:clamp(34px,4vw,56px);font-weight:700;letter-spacing:-.05em;line-height:1;color:var(--accent)}
+.how h3{font-size:clamp(16px,1.5vw,19px);letter-spacing:-.02em;margin:6px 0 4px}
+.how p{margin:0;font-size:13px;color:#333}
+.how .note{margin:14px 0 0;font-size:12px;color:var(--muted)}
+.how.folded ol,.how.folded .note{display:none}
+@media(max-width:900px){.how ol{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.how ol{grid-template-columns:1fr}}
 code{font:12px ui-monospace,monospace;background:#f3f3f3;padding:1px 4px;word-break:break-all}
 @media(max-width:900px){.filters{grid-template-columns:1fr 1fr}.filters label:first-child{grid-column:1/-1}.columns{grid-template-columns:1fr 1fr}.add{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}}
 @media(max-width:600px){.lead{grid-template-columns:1fr}.side{flex-direction:row;align-items:center;justify-content:space-between;text-align:left}.match small{right:-24px}.columns{grid-template-columns:1fr}.top{flex-wrap:wrap}.add{grid-template-columns:1fr}}
@@ -109,6 +120,17 @@ code{font:12px ui-monospace,monospace;background:#f3f3f3;padding:1px 4px;word-br
 <p class="lede">Grants, open calls, residencies, commissions, prizes and foundation funding: EU, UK, Italy, Slovenia and international. Checked every morning, matched to your skills. Pick a profile or make your own.</p>
 <div id="checked"></div>
 <div id="status" role="status" aria-live="polite"></div>
+
+<section id="how" class="how" aria-labelledby="how-title">
+ <div class="how-head"><h2 id="how-title">How it works</h2><button id="how-toggle" class="link" type="button" aria-expanded="true">Hide</button></div>
+ <ol>
+  <li><h3>We look every morning</h3><p>The EU funding portal and <span id="how-sources">dozens of other</span> funders, foundations and artist-call sites in the UK, Ireland, Italy, Slovenia and beyond are checked daily. Each new call is opened once to find its deadline, amount, fees and who can apply.</p></li>
+  <li><h3>You say what you do</h3><p>Pick an example profile or press <b>+ New profile</b>. Tick your skills, choose how wide to look (Precise, Related or Broad), where you're based and whether you apply as a person or an organisation. Every lead is scored against it and says <b>why</b> it matched. No AI: plain keyword matching in English, Italian and Slovene.</p></li>
+  <li><h3>Keep the ones you want</h3><p>Press <b>☆</b> to put a call in your <b>Pipeline</b> and move it from Shortlist to Preparing, Submitted and Result, with notes. <b>⧗</b> adds the deadline to your calendar, <b>×</b> hides a lead. It all stays private in your browser, or in your own Dropbox if you connect it.</p></li>
+  <li><h3>Share it, get it weekly</h3><p><b>Copy share link</b> sends someone the page seen through your profile, so they can save it as theirs. <b>Copy for weekly email</b> gives the line that adds a person to the Monday email: new matches and anything closing soon.</p></li>
+ </ol>
+ <p class="note">These are leads found automatically on public pages, not checked calls. Always read the funder's own page for eligibility, deadlines, fees and rights before applying.</p>
+</section>
 
 <section id="v-leads">
  <div id="profiles" class="profiles" role="group" aria-label="Match profile"></div>

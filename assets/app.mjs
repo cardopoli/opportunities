@@ -288,6 +288,7 @@ function drawSources() {
 function draw() {
   document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === view)));
   document.body.classList.toggle('compact', view !== 'leads');
+  $('how').hidden = view !== 'leads';
   for (const v of ['leads', 'pipeline', 'sources']) $('v-' + v).hidden = v !== view;
   const n = Object.values(state.pipeline).filter(p => p && !p.deleted).length;
   $('pipe-count').textContent = n ? ` (${n})` : '';
@@ -354,6 +355,10 @@ async function start() {
   lastVisit = marks.previous;
   if (lastVisit) $('only-new-label').textContent = `New since your last visit (${data.items.filter(i => i.first_seen > lastVisit && i.status !== 'closed').length})`;
   else $('only-new-wrap').hidden = true;
+  const how = $('how'), folded = read('opps.howFolded', false);
+  const setHow = f => { how.classList.toggle('folded', f); $('how-toggle').textContent = f ? 'Show' : 'Hide'; $('how-toggle').setAttribute('aria-expanded', String(!f)); };
+  setHow(folded); $('how-toggle').onclick = () => { const f = !how.classList.contains('folded'); write('opps.howFolded', f); setHow(f); };
+  if (data.sources?.length) $('how-sources').textContent = `${data.sources.length + manual.length - 1} other`;
   wire(); drawSync(); draw();
   if (db) pull().then(() => { draw(); status('Synced with Dropbox.'); }).catch(e => status(e.message, true));
 }
