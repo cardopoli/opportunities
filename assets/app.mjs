@@ -5,119 +5,96 @@ const $ = id => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter(k => k != null && k !== false)); return e; };
 const read = (k, d = null) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* full or blocked */ } };
-const K = {state: 'opps.state', visit: 'opps.lastVisit', mine: 'opps.myProfiles', active: 'opps.active', auth: 'opps.dropbox', pending: 'opps.pending', key: 'opps.appKey'};
-const STAGES = [['shortlist', 'Shortlist'], ['preparing', 'Preparing'], ['submitted', 'Submitted'], ['result', 'Result']];
-const KIND_LABEL = {residency: 'Residency', open_call: 'Open call', commission: 'Commission', prize: 'Prize', fellowship: 'Fellowship', grant: 'Grant', tender: 'Tender', training: 'Training', other: 'Other'};
+const K = {state: 'opps.state', visit: 'opps.lastVisit', mine: 'opps.myProfiles', active: 'opps.active', auth: 'opps.dropbox', pending: 'opps.pending', key: 'opps.appKey', how: 'opps.howFolded'};
+const STATUS = [['shortlist', 'Saved'], ['preparing', 'Preparing'], ['submitted', 'Sent'], ['won', 'Won'], ['declined', 'Not this time']];
+const KIND_LABEL = {residency: 'Residencies', open_call: 'Open calls', commission: 'Commissions', prize: 'Prizes', fellowship: 'Fellowships', grant: 'Grants', tender: 'Tenders', training: 'Training'};
 const REGION_LABEL = {UK: 'UK', IE: 'Ireland', IT: 'Italy', 'IT-FVG': 'Friuli Venezia Giulia', SI: 'Slovenia', 'IT-SI': 'Italy-Slovenia', EU: 'Europe (EU)', CH: 'Switzerland', International: 'International'};
-const BREADTH = ['Precise', 'Related', 'Broad'];
+const MIN = 25, MIN_WEAK = 10, PAGE = 40;
 const today = new Date();
 
 let data = {items: [], sources: []}, tree = {families: []}, idx = index(tree), presets = [], manual = [];
-let mine = read(K.mine, []), active = read(K.active, 'preset:practice'), shared = null, editing = null;
+let mine = read(K.mine, []), active = read(K.active, null), shared = null, draft = null;
 let state = Object.assign({pipeline: {}, hidden: {}, updatedAt: 0}, read(K.state, {}));
-let view = 'leads', kinds = new Set(), limit = 60, lastVisit = null;
+let view = 'leads', kinds = new Set(), limit = PAGE, lastVisit = null;
 let db = null, session = read(K.auth) || null, syncTimer = 0;
 
 function status(msg, bad = false) { const s = $('status'); s.textContent = msg || ''; s.classList.toggle('bad', !!bad); }
 const fmtDate = iso => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
-const ago = iso => { const h = Math.round((Date.now() - Date.parse(iso)) / 36e5); return h < 1 ? 'just now' : h < 36 ? `${h} h ago` : `${Math.round(h / 24)} days ago`; };
+const ago = iso => { const h = Math.round((Date.now() - Date.parse(iso)) / 36e5); return h < 1 ? 'just now' : h === 1 ? 'an hour ago' : h < 36 ? `${h} hours ago` : `${Math.round(h / 24)} days ago`; };
 const slugify = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').slice(0, 50);
 function download(text, name, type) { const a = el('a', {href: URL.createObjectURL(new Blob([text], {type})), download: name}); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
-async function copy(text, done) { try { await navigator.clipboard.writeText(text); status(done); } catch { prompt('Copy this:', text); } }
+async function copy(text, done) { try { await navigator.clipboard.writeText(text); status(done); } catch { prompt('Copy this link:', text); } }
+function when(i) {
+  const d = daysLeft(i, today);
+  if (d == null) return el('div', {className: 'when'}, i.status === 'rolling' ? 'No fixed deadline' : 'Deadline not found: check the page');
+  if (d < 0) return el('div', {className: 'when'}, 'Closed ' + fmtDate(i.deadline));
+  const cls = d <= 14 ? 'urgent' : d <= 45 ? 'soon' : '';
+  return el('div', {className: 'when', title: i.deadline_text || ''}, 'Closes ', el('b', {className: cls, textContent: fmtDate(i.deadline)}), d === 0 ? ' (today)' : d === 1 ? ' (tomorrow)' : ` (in ${d} days)`);
+}
 
 // ---------- profiles ----------
-function allProfiles() { return [...presets.map(p => ({...p, key: 'preset:' + p.id, preset: true})), ...mine.map(p => ({...p, key: 'mine:' + p.id})), ...(shared ? [{...shared, key: 'shared'}] : [])]; }
-function activeProfile() { return active === 'all' ? null : allProfiles().find(p => p.key === active) || allProfiles()[0] || null; }
-function setActive(key) { active = key; if (key !== 'shared') write(K.active, key); limit = 60; draw(); }
-const blank = () => ({id: Date.now().toString(36), name: 'My profile', skills: [], breadth: 1, based: [], as: 'individual', stage: 'any', kinds: [], free_only: false, exclude: []});
-
-function drawProfiles() {
-  const box = $('profiles'); box.replaceChildren();
-  const btn = (key, name, sub) => { const b = el('button', {type: 'button'}, el('b', {textContent: name}), el('small', {textContent: sub})); b.setAttribute('aria-pressed', String(active === key || (key !== 'all' && activeProfile()?.key === key && active !== 'all'))); b.onclick = () => setActive(key); return b; };
-  for (const p of allProfiles()) box.append(btn(p.key, p.name, p.preset ? 'Example profile' : p.key === 'shared' ? 'Shared with you' : `${p.skills.length} skills · ${BREADTH[p.breadth]}`));
-  box.append(btn('all', 'Everything', 'No matching, all open leads'));
-  const add = el('button', {type: 'button', className: 'new-profile'}, el('b', {textContent: '+ New profile'}), el('small', {textContent: 'Pick your skills'}));
-  add.onclick = () => openBuilder(blank(), true);
-  box.append(add);
-  const p = activeProfile();
-  $('profile-actions').hidden = !p || active === 'all';
-  if (p && active !== 'all') {
-    $('pa-name').textContent = p.name;
-    $('pa-edit').textContent = p.preset ? 'Copy and edit' : p.key === 'shared' ? 'Save as mine' : 'Edit';
-    $('pa-delete').hidden = !!p.preset || p.key === 'shared';
-  }
+const defaults = () => ({id: 'me', name: 'You', skills: [], breadth: 1, based: [], as: 'both', stage: 'any', kinds: [], free_only: false, exclude: []});
+function profile() {
+  if (active === 'shared' && shared) return shared;
+  if (active === 'all') return null;
+  if (active?.startsWith('preset:')) return presets.find(p => 'preset:' + p.id === active) || null;
+  return mine[0] || null;
 }
-
-// ---------- builder ----------
-function openBuilder(p, isNew) {
-  editing = {...p, skills: [...p.skills], based: [...(p.based || [])], kinds: [...(p.kinds || [])], exclude: [...(p.exclude || [])], isNew};
-  $('builder').hidden = false; $('b-name').value = editing.name; $('b-search').value = '';
-  drawBuilder(); $('builder').scrollIntoView({behavior: 'smooth', block: 'start'}); $('b-name').focus();
+function profileName() {
+  if (active === 'all') return 'everything';
+  if (active === 'shared' && shared) return shared.name;
+  if (active?.startsWith('preset:')) return profile()?.name || 'an example';
+  return 'you';
 }
-function drawBuilder() {
-  const e = editing; if (!e) return;
-  const q = $('b-search').value.trim().toLowerCase();
-  const box = $('b-tree'); box.replaceChildren();
+function saveMine(p) { mine = [{...defaults(), ...p, id: 'me', name: 'You'}, ...mine.slice(1)]; write(K.mine, mine); active = 'me'; write(K.active, active); }
+function setActive(key) { active = key; if (key !== 'shared') write(K.active, key); limit = PAGE; draw(); }
+
+// ---------- setup (two questions) ----------
+function openSetup() {
+  const base = mine[0] || defaults();
+  draft = {...base, skills: [...base.skills], based: [...base.based]};
+  $('setup').hidden = false; $('leads-wrap').hidden = true; $('s-cancel').hidden = !mine[0] && !active;
+  $('s-search').value = ''; drawSetup();
+}
+function closeSetup() { draft = null; $('setup').hidden = true; $('leads-wrap').hidden = false; }
+function drawSetup() {
+  const fam = $('s-families'); fam.replaceChildren();
   for (const f of tree.families) {
-    const skills = f.skills.filter(s => !q || (s.name + ' ' + f.name + ' ' + s.keywords.join(' ')).toLowerCase().includes(q));
-    if (!skills.length) continue;
-    const ticked = f.skills.filter(s => e.skills.includes(s.id)).length;
-    const det = el('details', {className: 'fam', open: !!q || ticked > 0}, el('summary', {}, el('b', {textContent: f.name}), ticked ? el('span', {className: 'count', textContent: ticked}) : null));
-    for (const s of skills) {
-      const cb = el('input', {type: 'checkbox', checked: e.skills.includes(s.id)});
-      cb.onchange = () => { e.skills = cb.checked ? [...e.skills, s.id] : e.skills.filter(x => x !== s.id); drawBuilder(); };
-      det.append(el('label', {className: 'skill', title: s.keywords.join(', ')}, cb, s.name));
-    }
-    box.append(det);
+    const ids = f.skills.map(s => s.id), on = ids.every(id => draft.skills.includes(id));
+    const b = el('button', {type: 'button', className: 'chip', textContent: f.name}); b.setAttribute('aria-pressed', String(on));
+    b.onclick = () => { draft.skills = on ? draft.skills.filter(id => !ids.includes(id)) : [...new Set([...draft.skills, ...ids])]; drawSetup(); };
+    fam.append(b);
   }
-  document.querySelectorAll('[name=b-breadth]').forEach(r => r.checked = Number(r.value) === e.breadth);
-  $('b-breadth-help').textContent = ['Only calls that mention the exact skills you ticked.', 'Also calls for the wider field, e.g. “visual arts” when you ticked photobooks.', 'Also neighbouring fields and calls open to all disciplines.'][e.breadth];
-  const based = $('b-based'); based.replaceChildren(...Object.entries(BASED).map(([k, label]) => { const cb = el('input', {type: 'checkbox', checked: e.based.includes(k)}); cb.onchange = () => { e.based = cb.checked ? [...e.based, k] : e.based.filter(x => x !== k); preview(); }; return el('label', {className: 'opt'}, cb, label); }));
-  document.querySelectorAll('[name=b-as]').forEach(r => r.checked = r.value === e.as);
-  document.querySelectorAll('[name=b-stage]').forEach(r => r.checked = r.value === e.stage);
-  const kb = $('b-kinds'); kb.replaceChildren(...Object.entries(KIND_LABEL).filter(([k]) => k !== 'other').map(([k, label]) => { const b = el('button', {type: 'button', className: 'chip', textContent: label}); b.setAttribute('aria-pressed', String(e.kinds.includes(k))); b.onclick = () => { e.kinds = e.kinds.includes(k) ? e.kinds.filter(x => x !== k) : [...e.kinds, k]; drawBuilder(); }; return b; }));
-  $('b-free').checked = !!e.free_only;
-  $('b-exclude').value = e.exclude.join(', ');
-  $('b-picked').textContent = e.skills.length ? e.skills.map(id => idx.leaves.get(id)?.name).filter(Boolean).join(' · ') : 'Nothing ticked yet.';
-  preview();
+  const q = $('s-search').value.trim().toLowerCase();
+  const leaves = [...idx.leaves.values()];
+  const show = q ? leaves.filter(s => (s.name + ' ' + s.keywords.join(' ')).toLowerCase().includes(q)).slice(0, 18)
+    : leaves.filter(s => draft.skills.includes(s.id) && !tree.families.find(f => f.id === s.family).skills.every(x => draft.skills.includes(x.id)));
+  $('s-skills').replaceChildren(...show.map(s => { const on = draft.skills.includes(s.id); const b = el('button', {type: 'button', className: 'chip', textContent: s.name}); b.setAttribute('aria-pressed', String(on)); b.onclick = () => { draft.skills = on ? draft.skills.filter(x => x !== s.id) : [...draft.skills, s.id]; drawSetup(); }; return b; }));
+  $('s-based').replaceChildren(...Object.entries(BASED).map(([k, label]) => { const on = draft.based.includes(k); const b = el('button', {type: 'button', className: 'chip', textContent: label}); b.setAttribute('aria-pressed', String(on)); b.onclick = () => { draft.based = on ? draft.based.filter(x => x !== k) : [...draft.based, k]; drawSetup(); }; return b; }));
 }
-function preview() {
-  if (!editing) return;
-  const n = data.items.filter(i => i.present !== false && i.status !== 'closed' && match(i, editing, idx).score >= Number($('min').value)).length;
-  $('b-preview').textContent = editing.skills.length ? `${n} open lead${n === 1 ? '' : 's'} would match at your current minimum (${$('min').value})` : 'Tick a few skills to see matches.';
-}
-function saveBuilder() {
-  const e = editing; if (!e) return;
-  e.name = $('b-name').value.trim() || 'My profile';
-  e.exclude = $('b-exclude').value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  if (!e.skills.length) return status('Tick at least one skill first.', true);
-  const {isNew, key, preset, ...clean} = e;
-  if (isNew || preset || key === 'shared') { clean.id = Date.now().toString(36); mine.push(clean); }
-  else mine = mine.map(m => m.id === clean.id ? clean : m);
-  if (key === 'shared') { shared = null; history.replaceState(null, '', location.pathname); }
-  write(K.mine, mine); editing = null; $('builder').hidden = true;
-  setActive('mine:' + clean.id); status(`Saved “${clean.name}” on this device.`);
+function finishSetup() {
+  if (!draft.skills.length) return status('Tap at least one thing you do.', true);
+  saveMine(draft); if (shared) { shared = null; history.replaceState(null, '', location.pathname); }
+  closeSetup(); status('Done. These are the calls that fit you. Press Save on the ones you like.'); limit = PAGE; draw(); window.scrollTo({top: $('leads-wrap').offsetTop - 70, behavior: 'smooth'});
 }
 
 // ---------- state & sync ----------
 function save() { state.updatedAt = Date.now(); write(K.state, state); if (db) { clearTimeout(syncTimer); syncTimer = setTimeout(() => push().catch(e => status(e.message, true)), 1200); } }
 function mergeStates(a, b) {
-  const out = {pipeline: {...a.pipeline}, hidden: {...a.hidden, ...b.hidden}, profiles: a.profiles, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0)};
+  const out = {pipeline: {...a.pipeline}, hidden: {...a.hidden, ...b.hidden}, updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0)};
   for (const [id, p] of Object.entries(b.pipeline || {})) if (!out.pipeline[id] || (p.updatedAt || 0) > (out.pipeline[id].updatedAt || 0)) out.pipeline[id] = p;
   return out;
 }
+function takeProfiles(list) { if (Array.isArray(list) && list.length && !mine.length) { mine = list; write(K.mine, mine); if (!active) { active = 'me'; write(K.active, active); } } }
 async function pull() {
   let remote = null;
   try { remote = JSON.parse(await db.download('/opportunities/pipeline.json')); } catch (e) { if (e.status && e.status !== 409) throw e; }
-  if (remote) {
-    state = mergeStates(state, remote); write(K.state, state);
-    if (Array.isArray(remote.profiles)) { const ids = new Set(mine.map(m => m.id)); mine = [...mine, ...remote.profiles.filter(p => !ids.has(p.id))]; write(K.mine, mine); }
-  }
+  if (remote) { state = mergeStates(state, remote); write(K.state, state); takeProfiles(remote.profiles); }
 }
 async function push() { await db.upload('/opportunities/pipeline.json', JSON.stringify({...state, profiles: mine, v: 2}, null, 1)); status('Saved to Dropbox.'); }
 async function connect() {
-  const key = $('app-key').value.trim() || read(K.key, '') || read('cookbook.appKey', '');
-  if (!/^[A-Za-z0-9_-]{5,100}$/.test(key)) { $('sync-setup').open = true; $('app-key').focus(); throw Error('Add your Dropbox app key first.'); }
+  const key = $('app-key').value.trim() || read(K.key, '');
+  if (!/^[A-Za-z0-9_-]{5,100}$/.test(key)) { $('sync-setup').open = true; $('app-key').focus(); throw Error('Add your Dropbox app key first (see One-off setup).'); }
   write(K.key, key);
   const verifier = random(), st = random(), redirect = callbackURL(location.href);
   sessionStorage.setItem(K.pending, JSON.stringify({key, verifier, state: st, redirect, remember: true, created: Date.now()}));
@@ -133,104 +110,97 @@ async function callback() {
   session = {key: pending.key, remember: true};
   db = new KitchenDropbox(session, s => write(K.auth, s));
   await db.token({client_id: pending.key, grant_type: 'authorization_code', code: u.searchParams.get('code'), code_verifier: pending.verifier, redirect_uri: pending.redirect});
+  view = 'saved';
 }
 function disconnect() {
   const access = db?.session?.access_token; db?.close(); db = null; session = null; localStorage.removeItem(K.auth);
   if (access) fetch('https://api.dropboxapi.com/2/auth/token/revoke', {method: 'POST', headers: {Authorization: 'Bearer ' + access}, referrerPolicy: 'no-referrer'}).catch(() => {});
   drawSync(); status('Dropbox disconnected. Everything stays in this browser.');
 }
-function drawSync() { $('sync-on').hidden = !db; $('sync-off').hidden = !!db; $('callback').textContent = callbackURL(location.href); $('app-key').value = read(K.key, '') || read('cookbook.appKey', ''); }
+function drawSync() { $('sync-on').hidden = !db; $('sync-off').hidden = !!db; $('callback').textContent = callbackURL(location.href); $('app-key').value = read(K.key, ''); }
 
 // ---------- leads ----------
 function filtered() {
-  const p = activeProfile(), q = $('q').value.trim().toLowerCase(), region = $('region').value, when = $('when').value, min = Number($('min').value), sort = $('sort').value;
-  const onlyNew = $('only-new').checked, free = $('free').checked;
+  const p = profile(), q = $('q').value.trim().toLowerCase(), region = $('region').value, w = $('when').value, sort = $('sort').value;
+  const min = $('weak').checked ? MIN_WEAK : MIN;
   let list = data.items.filter(i => i.present !== false && i.status !== 'closed' && !state.hidden[i.id]);
   if (q) list = list.filter(i => [i.title, i.summary, i.source, i.programme].join(' ').toLowerCase().includes(q));
   if (kinds.size) list = list.filter(i => (i.kinds || []).some(k => kinds.has(k)));
   if (region) list = list.filter(i => i.region === region);
-  if (free) list = list.filter(i => i.fee !== true);
-  if (onlyNew && lastVisit) list = list.filter(i => i.first_seen > lastVisit);
-  if (when) list = list.filter(i => { const d = daysLeft(i, today); return when === 'rolling' ? i.status === 'rolling' : when === 'dated' ? d != null : d != null && d >= 0 && d <= Number(when); });
-  const usep = active !== 'all' && p;
-  const scored = list.map(i => ({i, m: usep ? match(i, p, idx) : null})).filter(x => !x.m || x.m.score >= min);
+  if ($('free').checked) list = list.filter(i => i.fee !== true);
+  if ($('only-new').checked && lastVisit) list = list.filter(i => i.first_seen > lastVisit);
+  if (w) list = list.filter(i => { const d = daysLeft(i, today); return w === 'rolling' ? i.status === 'rolling' : d != null && d >= 0 && d <= Number(w); });
+  const scored = list.map(i => ({i, m: p ? match(i, p, idx) : null})).filter(x => !x.m || x.m.score >= min);
   const dl = x => daysLeft(x.i, today) ?? 9999;
-  scored.sort(sort === 'soon' ? (a, b) => dl(a) - dl(b) : sort === 'new' ? (a, b) => b.i.first_seen.localeCompare(a.i.first_seen) : (a, b) => (b.m?.score ?? 0) - (a.m?.score ?? 0) || dl(a) - dl(b));
+  scored.sort(sort === 'soon' || !p ? (a, b) => dl(a) - dl(b) : sort === 'new' ? (a, b) => b.i.first_seen.localeCompare(a.i.first_seen) : (a, b) => (b.m?.score ?? 0) - (a.m?.score ?? 0) || dl(a) - dl(b));
   return scored;
 }
-function deadlineBadge(i) {
-  const d = daysLeft(i, today);
-  if (d == null) return el('span', {className: 'dl muted', textContent: i.status === 'rolling' ? 'Rolling' : 'No date found'});
-  const cls = d < 0 ? 'past' : d <= 14 ? 'urgent' : d <= 45 ? 'soon' : 'ok';
-  return el('span', {className: 'dl ' + cls, title: i.deadline_text || ''}, el('b', {textContent: fmtDate(i.deadline)}), el('small', {textContent: d < 0 ? 'passed' : d === 0 ? 'today' : `${d} day${d === 1 ? '' : 's'}`}));
+function saveLead(i) {
+  state.pipeline[i.id] = {id: i.id, stage: 'shortlist', notes: '', item: {id: i.id, title: i.title, url: i.url, source: i.source, region: i.region, kinds: i.kinds, deadline: i.deadline || null, amount: i.amount || null, summary: i.summary || ''}, addedAt: Date.now(), updatedAt: Date.now()};
+  save(); drawTabs();
 }
 function row({i, m}) {
-  const inPipe = state.pipeline[i.id] && !state.pipeline[i.id].deleted;
-  const tags = [i.fee === true ? 'entry fee' : null, i.applicants === 'organisations' ? 'organisations' : i.applicants === 'individuals' ? 'individuals' : null, i.early_career ? 'early-career' : null].filter(Boolean);
-  const meta = [i.source, REGION_LABEL[i.region] || i.region, (i.kinds || []).map(k => KIND_LABEL[k] || k).join(', '), money(i.amount), ...tags].filter(Boolean).join(' · ');
-  const isNew = lastVisit && i.first_seen > lastVisit;
-  const star = el('button', {type: 'button', className: 'icon' + (inPipe ? ' on' : ''), title: inPipe ? 'In your pipeline' : 'Add to pipeline', textContent: inPipe ? '★' : '☆'});
-  star.setAttribute('aria-label', star.title);
-  star.onclick = () => { if (!inPipe) addToPipeline(i); else { view = 'pipeline'; draw(); } };
-  const hide = el('button', {type: 'button', className: 'icon', title: 'Hide this lead', textContent: '×'}); hide.setAttribute('aria-label', 'Hide this lead');
-  hide.onclick = () => { state.hidden[i.id] = Date.now(); save(); draw(); status('Hidden. Undo it under Sources → Hidden leads.'); };
-  const cal = i.deadline ? el('button', {type: 'button', className: 'icon', title: 'Add deadline to calendar', textContent: '⧗'}) : null;
-  if (cal) { cal.setAttribute('aria-label', cal.title); cal.onclick = () => download(ics([i]), slugify(i.title) + '.ics', 'text/calendar'); }
-  const details = el('details', {}, el('summary', {textContent: 'Details'}),
+  const isSaved = () => !!(state.pipeline[i.id] && !state.pipeline[i.id].deleted);
+  const meta = [money(i.amount), i.source, REGION_LABEL[i.region] || i.region, i.fee === true ? 'entry fee' : null, i.applicants === 'organisations' ? 'for organisations' : null, i.early_career ? 'early career' : null].filter(Boolean).join(' · ');
+  const saveBtn = el('button', {type: 'button', className: 'btn'});
+  const paint = () => { const s = isSaved(); saveBtn.textContent = s ? 'Saved ✓' : 'Save'; saveBtn.classList.toggle('on', s); };
+  saveBtn.onclick = () => { if (isSaved()) { view = 'saved'; draw(); } else { saveLead(i); paint(); status(`Saved. Find it under Saved.`); } };
+  paint();
+  const hide = el('button', {type: 'button', className: 'link small', textContent: 'Not for me'});
+  hide.onclick = () => { state.hidden[i.id] = Date.now(); save(); drawLeads(); status('Hidden. Changed your mind? More options → Leads you hid.'); };
+  const details = el('details', {}, el('summary', {textContent: 'More about this call'}),
     i.summary ? el('p', {textContent: i.summary}) : null,
-    i.deadline_text ? el('p', {className: 'small', textContent: 'Deadline found in: “' + i.deadline_text + '”'}) : null,
-    i.amount?.text ? el('p', {className: 'small', textContent: 'Amount found in: “' + i.amount.text + '”'}) : null,
-    ...(i.also_on || []).map(a => el('p', {className: 'small'}, 'Also on ', el('a', {href: a.url, target: '_blank', rel: 'noopener', textContent: a.source}))),
-    el('p', {className: 'small', textContent: `First seen ${fmtDate(i.first_seen.slice(0, 10))}. Found automatically: check eligibility, fees and rights on the funder's page.`}));
+    i.deadline ? el('p', {}, el('button', {type: 'button', className: 'link', textContent: 'Add the deadline to my calendar', onclick: () => download(ics([i]), slugify(i.title) + '.ics', 'text/calendar')})) : null,
+    ...(i.also_on || []).map(a => el('p', {className: 'small'}, 'Also listed on ', el('a', {href: a.url, target: '_blank', rel: 'noopener', textContent: a.source}))),
+    el('p', {className: 'small', textContent: 'Found automatically. Check eligibility, fees and rights on the funder\'s own page.'}));
+  const isNew = lastVisit && i.first_seen > lastVisit;
   return el('li', {className: 'lead'},
-    el('div', {className: 'main'},
-      el('a', {className: 'title', href: i.url, target: '_blank', rel: 'noopener', textContent: i.title}), isNew ? el('span', {className: 'new', textContent: 'New'}) : null,
-      el('div', {className: 'meta', textContent: meta}),
-      m && m.reasons.length ? el('div', {className: 'why', textContent: 'Why: ' + m.reasons.slice(0, 4).join(', ')}) : null, details),
-    el('div', {className: 'side'}, deadlineBadge(i), m ? el('div', {className: 'match', title: 'Match with this profile'}, el('span', {style: `width:${m.score}%`}), el('small', {textContent: m.score})) : null,
-      el('div', {className: 'acts'}, star, cal, hide)));
+    el('a', {className: 'title', href: i.url, target: '_blank', rel: 'noopener', textContent: i.title}), isNew ? el('span', {className: 'new', textContent: 'New'}) : null,
+    when(i), meta ? el('div', {className: 'meta', textContent: meta}) : null,
+    m && m.reasons.length ? el('div', {className: 'why', textContent: 'Why it fits: ' + m.reasons.slice(0, 3).join(', ')}) : null,
+    el('div', {className: 'acts'}, saveBtn, hide), details);
 }
 function drawLeads() {
-  const list = filtered(), p = activeProfile();
-  $('count').textContent = `${list.length} lead${list.length === 1 ? '' : 's'}` + (active !== 'all' && p ? ` for “${p.name}”` : '');
+  const list = filtered();
+  $('for').replaceChildren('Showing calls for ', el('b', {textContent: profileName()}));
+  $('count').textContent = `${list.length} call${list.length === 1 ? '' : 's'}${profile() ? ', best fit first' : ''}`;
   $('leads').replaceChildren(...list.slice(0, limit).map(row));
   $('more').hidden = list.length <= limit;
   $('none').hidden = list.length > 0;
-  $('min-wrap').hidden = active === 'all';
+}
+function drawOptions() {
+  const p = mine[0];
+  const editable = active === 'me' && p;
+  $('o-as').disabled = !editable; document.querySelectorAll('[name=o-breadth]').forEach(r => { r.disabled = !editable; r.checked = editable && Number(r.value) === p.breadth; }); $('o-exclude').disabled = !editable;
+  if (editable) { $('o-as').value = p.as || 'both'; $('o-exclude').value = (p.exclude || []).join(', '); }
 }
 
-// ---------- pipeline ----------
-function addToPipeline(i, stage = 'shortlist') {
-  state.pipeline[i.id] = {id: i.id, stage, notes: '', item: {id: i.id, title: i.title, url: i.url, source: i.source, region: i.region, kinds: i.kinds, deadline: i.deadline || null, amount: i.amount || null, summary: i.summary || ''}, addedAt: Date.now(), updatedAt: Date.now()};
-  save(); draw(); status(`Added to your shortlist: ${i.title}`);
-}
+// ---------- saved ----------
+function stageOf(p) { return p.stage === 'result' ? (p.result === 'won' ? 'won' : 'declined') : p.stage; }
 function card(p) {
-  const i = p.item;
-  const stage = el('select', {}, ...STAGES.map(([v, l]) => el('option', {value: v, textContent: l, selected: p.stage === v}))); stage.setAttribute('aria-label', 'Stage');
-  stage.onchange = () => { p.stage = stage.value; p.updatedAt = Date.now(); save(); draw(); };
-  const result = el('select', {hidden: p.stage !== 'result'}, ...[['', 'Waiting'], ['won', 'Won'], ['declined', 'Not this time'], ['withdrawn', 'Withdrawn']].map(([v, l]) => el('option', {value: v, textContent: l, selected: (p.result || '') === v}))); result.setAttribute('aria-label', 'Result');
-  result.onchange = () => { p.result = result.value; p.updatedAt = Date.now(); save(); };
-  const notes = el('textarea', {value: p.notes || '', placeholder: 'Notes: requirements, partners, what to send…', rows: 3});
+  const i = p.item, st = stageOf(p);
+  const sel = el('select', {}, ...STATUS.map(([v, l]) => el('option', {value: v, textContent: l, selected: st === v}))); sel.setAttribute('aria-label', 'Status');
+  sel.onchange = () => { const v = sel.value; if (v === 'won' || v === 'declined') { p.stage = 'result'; p.result = v; } else { p.stage = v; p.result = ''; } p.updatedAt = Date.now(); save(); drawSaved(); };
+  const notes = el('textarea', {value: p.notes || '', placeholder: 'What to send, who to ask, partners…', rows: 3});
   notes.onchange = () => { p.notes = notes.value; p.updatedAt = Date.now(); save(); };
   const dl = el('input', {type: 'date', value: i.deadline || ''}); dl.setAttribute('aria-label', 'Deadline');
-  dl.onchange = () => { i.deadline = dl.value || null; p.updatedAt = Date.now(); save(); draw(); };
-  const del = el('button', {type: 'button', className: 'link', textContent: 'Remove'});
-  del.onclick = () => { if (confirm(`Remove “${i.title}” from your pipeline?`)) { state.pipeline[p.id] = {id: p.id, deleted: true, updatedAt: Date.now()}; save(); draw(); } };
-  return el('li', {className: 'card' + (p.result ? ' r-' + p.result : '')},
+  dl.onchange = () => { i.deadline = dl.value || null; p.updatedAt = Date.now(); save(); drawSaved(); };
+  const del = el('button', {type: 'button', className: 'link small', textContent: 'Remove'});
+  del.onclick = () => { if (confirm(`Remove “${i.title}” from Saved?`)) { state.pipeline[p.id] = {id: p.id, deleted: true, updatedAt: Date.now()}; save(); drawSaved(); drawTabs(); } };
+  return el('li', {className: 'card' + (st === 'won' || st === 'declined' ? ' done' : '')},
     i.url ? el('a', {className: 'title', href: i.url, target: '_blank', rel: 'noopener', textContent: i.title}) : el('span', {className: 'title', textContent: i.title}),
-    el('div', {className: 'meta', textContent: [i.source, money(i.amount)].filter(Boolean).join(' · ')}),
-    el('div', {className: 'row'}, deadlineBadge(i), dl), el('div', {className: 'row'}, stage, result), notes, el('div', {className: 'row end'}, del));
+    when(i), el('div', {className: 'meta', textContent: [money(i.amount), i.source].filter(Boolean).join(' · ')}),
+    el('div', {className: 'row'}, sel, del),
+    el('details', {open: !!p.notes}, el('summary', {textContent: p.notes ? 'Notes' : 'Add notes or change the deadline'}), notes, el('div', {className: 'row'}, el('span', {className: 'small', textContent: 'Deadline'}), dl)));
 }
-function drawPipeline() {
+function drawSaved() {
   const items = Object.values(state.pipeline).filter(p => p && !p.deleted && p.item);
-  const box = $('columns'); box.replaceChildren();
-  for (const [stage, label] of STAGES) {
-    const rank = p => { const d = daysLeft(p.item, today); return d == null ? 1e6 : d < 0 ? 2e6 - d : d; };
-    const list = items.filter(p => p.stage === stage).sort((a, b) => rank(a) - rank(b));
-    box.append(el('section', {className: 'col'}, el('h3', {}, label, el('small', {textContent: list.length})), el('ol', {}, ...list.map(card))));
-  }
-  $('pipe-empty').hidden = items.length > 0;
+  const rank = p => { const st = stageOf(p); if (st === 'won' || st === 'declined') return 3e6; const d = daysLeft(p.item, today); return d == null ? 1e6 : d < 0 ? 2e6 - d : d; };
+  items.sort((a, b) => rank(a) - rank(b));
+  $('saved').replaceChildren(...items.map(card));
+  $('saved-empty').hidden = items.length > 0;
 }
+function drawTabs() { const n = Object.values(state.pipeline).filter(p => p && !p.deleted).length; $('saved-count').textContent = n ? ` (${n})` : ''; }
 const MONTHS = {january: 1, february: 2, march: 3, april: 4, may: 5, june: 6, july: 7, august: 8, september: 9, october: 10, november: 11, december: 12, gennaio: 1, febbraio: 2, marzo: 3, aprile: 4, maggio: 5, giugno: 6, luglio: 7, agosto: 8, settembre: 9, ottobre: 10, dicembre: 12};
 function readCall(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -250,81 +220,70 @@ async function addByLink() {
   const url = $('add-url').value.trim(), title = $('add-title').value.trim();
   if (!/^https?:\/\/\S+$/i.test(url)) throw Error('Paste the full web address of the call, starting with https://');
   const known = data.items.find(i => i.url === url);
-  if (known) { addToPipeline(known); $('add-url').value = ''; return; }
+  if (known) { saveLead(known); $('add-url').value = ''; drawSaved(); return status('Saved.'); }
   let found = {};
   if (db && !title) {
-    status('Dropbox is fetching the page…');
+    status('Reading the page through your Dropbox…');
     const path = `/opportunities/inbox/${Date.now()}.html`;
     try { await db.saveUrl(path, url); found = readCall(await db.download(path)); } catch (e) { status(e.message + ' Add a title by hand instead.', true); } finally { db.remove(path).catch(() => {}); }
   }
   const t = title || found.title;
-  if (!t) { $('add-title').focus(); throw Error('Add a title for this call (or connect Dropbox so the page can be read for you).'); }
+  if (!t) { $('add-title').focus(); throw Error('Add a title for this call.'); }
   const id = 'own-' + Date.now().toString(36);
   state.pipeline[id] = {id, stage: 'shortlist', notes: '', item: {id, title: t, url, source: new URL(url).hostname.replace(/^www\./, ''), deadline: $('add-deadline').value || found.deadline || null, amount: null, summary: found.summary || ''}, addedAt: Date.now(), updatedAt: Date.now()};
   save(); $('add-url').value = ''; $('add-title').value = ''; $('add-deadline').value = '';
-  view = 'pipeline'; draw(); status(`Added “${t}” to your shortlist${found.deadline ? ' with its deadline' : ''}.`);
+  drawSaved(); drawTabs(); status(`Added “${t}”.`);
 }
 function importBackup(file) {
   file.text().then(t => {
     const got = JSON.parse(t);
     if (!got || typeof got.pipeline !== 'object') throw Error('That file is not an Opportunities backup.');
-    state = mergeStates(state, got);
-    if (Array.isArray(got.profiles)) { const ids = new Set(mine.map(m => m.id)); mine = [...mine, ...got.profiles.filter(p => !ids.has(p.id))]; write(K.mine, mine); }
-    save(); view = 'pipeline'; draw(); status(`Imported ${Object.keys(got.pipeline).length} pipeline items.`);
+    state = mergeStates(state, got); takeProfiles(got.profiles);
+    save(); drawSaved(); drawTabs(); status(`Restored ${Object.keys(got.pipeline).length} saved calls.`);
   }).catch(e => status(e.message, true));
 }
 
 // ---------- sources ----------
 function drawSources() {
   const ok = data.sources.filter(s => s.status === 'ok').length;
-  $('src-summary').textContent = `${ok} of ${data.sources.length} checked automatically answered on the last run · ${manual.length} to check by hand`;
-  $('src-list').replaceChildren(...data.sources.map(s => el('li', {className: s.status}, el('a', {href: s.url, target: '_blank', rel: 'noopener', textContent: s.name}), el('span', {textContent: s.status === 'ok' ? `${s.listings} listed${s.new ? ` · ${s.new} new` : ''}` : `not answering (${s.error})`}))));
+  $('src-summary').textContent = `${ok} of ${data.sources.length} sites answered this morning, plus ${manual.length} that block automatic checks and are worth a look by hand.`;
+  $('src-list').replaceChildren(...data.sources.map(s => el('li', {}, el('a', {href: s.url, target: '_blank', rel: 'noopener', textContent: s.name}), el('span', {textContent: s.status === 'ok' ? `${s.listings} listed` : 'not answering'}))));
   $('manual-list').replaceChildren(...manual.map(s => el('li', {}, el('a', {href: s.url, target: '_blank', rel: 'noopener', textContent: s.name}), el('span', {textContent: s.why || ''}))));
   const hidden = Object.keys(state.hidden).map(id => data.items.find(i => i.id === id)).filter(Boolean);
   $('hidden-count').textContent = hidden.length;
-  $('hidden-list').replaceChildren(...hidden.map(i => { const b = el('button', {type: 'button', className: 'link', textContent: 'Show again'}); b.onclick = () => { delete state.hidden[i.id]; save(); draw(); }; return el('li', {}, el('span', {textContent: i.title}), b); }));
+  $('hidden-list').replaceChildren(...hidden.map(i => { const b = el('button', {type: 'button', className: 'link small', textContent: 'Show again'}); b.onclick = () => { delete state.hidden[i.id]; save(); draw(); }; return el('li', {}, el('span', {textContent: i.title}), b); }));
 }
 
 function draw() {
   document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === view)));
-  document.body.classList.toggle('compact', view !== 'leads');
-  $('how').hidden = view !== 'leads';
-  for (const v of ['leads', 'pipeline', 'sources']) $('v-' + v).hidden = v !== view;
-  const n = Object.values(state.pipeline).filter(p => p && !p.deleted).length;
-  $('pipe-count').textContent = n ? ` (${n})` : '';
-  if (view === 'leads') { drawProfiles(); drawLeads(); }
-  if (view === 'pipeline') drawPipeline();
-  if (view === 'sources') drawSources();
+  $('v-leads').hidden = view !== 'leads'; $('v-saved').hidden = view !== 'saved';
+  $('intro').hidden = view !== 'leads'; $('how').hidden = view !== 'leads';
+  drawTabs();
+  if (view === 'leads') { drawLeads(); drawOptions(); drawSources(); }
+  if (view === 'saved') drawSaved();
 }
 
 function wire() {
-  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { view = b.dataset.view; draw(); });
-  for (const id of ['q', 'region', 'when', 'sort', 'only-new', 'free']) $(id).addEventListener('input', () => { limit = 60; drawLeads(); });
-  $('min').addEventListener('input', () => { $('min-out').textContent = $('min').value; limit = 60; drawLeads(); });
-  const kbox = $('kinds');
-  for (const [k, label] of Object.entries(KIND_LABEL)) {
-    if (k === 'other') continue;
+  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { view = b.dataset.view; draw(); window.scrollTo({top: 0}); });
+  for (const id of ['q', 'region', 'when', 'sort', 'only-new', 'free', 'weak']) $(id).addEventListener('input', () => { limit = PAGE; drawLeads(); });
+  $('kinds').replaceChildren(...Object.entries(KIND_LABEL).map(([k, label]) => {
     const b = el('button', {type: 'button', className: 'chip', textContent: label}); b.setAttribute('aria-pressed', 'false');
-    b.onclick = () => { kinds.has(k) ? kinds.delete(k) : kinds.add(k); b.setAttribute('aria-pressed', String(kinds.has(k))); limit = 60; drawLeads(); };
-    kbox.append(b);
-  }
-  $('more').onclick = () => { limit += 60; drawLeads(); };
-  // profile actions
-  $('pa-edit').onclick = () => { const p = activeProfile(); if (p) openBuilder(p, !!p.preset); };
-  $('pa-share').onclick = () => { const p = activeProfile(); if (p) copy(location.origin + location.pathname + '#p=' + encodeProfile(p), 'Link copied. Anyone who opens it sees the leads through this profile.'); };
-  $('pa-email').onclick = () => { const p = activeProfile(); if (!p) return; const {key, preset, id, ...prof} = p; copy(JSON.stringify({name: p.name, email: 'you@example.com', profile: prof}), 'Copied. Change the email, then paste it into the DIGEST_PEOPLE list (see the guide).'); };
-  $('pa-delete').onclick = () => { const p = activeProfile(); if (p && !p.preset && confirm(`Delete the profile “${p.name}” from this device?`)) { mine = mine.filter(m => 'mine:' + m.id !== p.key); write(K.mine, mine); setActive('preset:' + (presets[0]?.id || '')); } };
-  // builder
-  $('b-search').oninput = drawBuilder;
-  document.querySelectorAll('[name=b-breadth]').forEach(r => r.onchange = () => { editing.breadth = Number(r.value); drawBuilder(); });
-  document.querySelectorAll('[name=b-as]').forEach(r => r.onchange = () => { editing.as = r.value; preview(); });
-  document.querySelectorAll('[name=b-stage]').forEach(r => r.onchange = () => { editing.stage = r.value; preview(); });
-  $('b-free').onchange = () => { editing.free_only = $('b-free').checked; preview(); };
-  $('b-save').onclick = saveBuilder;
-  $('b-cancel').onclick = () => { editing = null; $('builder').hidden = true; };
-  // pipeline & sync
+    b.onclick = () => { kinds.has(k) ? kinds.delete(k) : kinds.add(k); b.setAttribute('aria-pressed', String(kinds.has(k))); limit = PAGE; drawLeads(); };
+    return b;
+  }));
+  $('more').onclick = () => { limit += PAGE; drawLeads(); };
+  $('change').onclick = openSetup;
+  $('share').onclick = () => { const p = profile(); const link = location.origin + location.pathname + (p ? '#p=' + encodeProfile({...p, name: p.name === 'You' ? 'A friend' : p.name}) : ''); copy(link, 'Link copied. Whoever opens it sees these calls, and can make them their own.'); };
+  $('s-search').oninput = drawSetup;
+  $('s-go').onclick = finishSetup;
+  $('s-cancel').onclick = () => { closeSetup(); draw(); };
+  $('o-as').onchange = () => { if (mine[0]) { saveMine({...mine[0], as: $('o-as').value}); drawLeads(); } };
+  document.querySelectorAll('[name=o-breadth]').forEach(r => r.onchange = () => { if (mine[0]) { saveMine({...mine[0], breadth: Number(r.value)}); drawLeads(); } });
+  $('o-exclude').onchange = () => { if (mine[0]) { saveMine({...mine[0], exclude: $('o-exclude').value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)}); drawLeads(); } };
+  const how = $('how'), setHow = f => { how.classList.toggle('folded', f); $('how-toggle').textContent = f ? 'Show' : 'Hide'; $('how-toggle').setAttribute('aria-expanded', String(!f)); };
+  setHow(read(K.how, false)); $('how-toggle').onclick = () => { const f = !how.classList.contains('folded'); write(K.how, f); setHow(f); };
   $('add-go').onclick = () => addByLink().catch(e => status(e.message, true));
-  $('ics-all').onclick = () => { const items = Object.values(state.pipeline).filter(p => p && !p.deleted && p.item?.deadline && p.stage !== 'result').map(p => p.item); if (!items.length) return status('No pipeline deadlines yet.'); download(ics(items), 'opportunities-deadlines.ics', 'text/calendar'); };
+  $('ics-all').onclick = () => { const items = Object.values(state.pipeline).filter(p => p && !p.deleted && p.item?.deadline && p.stage !== 'result').map(p => p.item); if (!items.length) return status('No saved deadlines yet.'); download(ics(items), 'opportunities-deadlines.ics', 'text/calendar'); };
   $('backup').onclick = () => download(JSON.stringify({...state, profiles: mine, v: 2}, null, 1), `opportunities-backup-${today.toISOString().slice(0, 10)}.json`, 'application/json');
   $('restore').onchange = e => { if (e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; };
   $('connect').onclick = () => connect().catch(e => status(e.message, true));
@@ -345,21 +304,25 @@ async function start() {
     ]);
     data = d; presets = p.presets; tree = t; idx = index(tree); manual = s.sources.filter(x => x.kind === 'manual');
   } catch (e) { status(e.message, true); }
+  // Older saves kept several profiles: keep the first personal one as "You".
+  if (active?.startsWith('mine:')) { active = 'me'; write(K.active, active); }
   const m = /^#p=([\w-]+)$/.exec(location.hash);
-  if (m) { try { shared = decodeProfile(m[1]); active = 'shared'; status(`You're seeing leads through “${shared.name}”. Save it as yours to keep it.`); } catch (e) { status(e.message, true); } }
+  if (m) { try { shared = decodeProfile(m[1]); active = 'shared'; status(`Someone shared these calls with you. Like them? Tap Change, then “Show my opportunities” to keep this as yours.`); } catch (e) { status(e.message, true); } }
   const open = data.items.filter(i => i.present !== false && i.status !== 'closed').length;
-  $('checked').textContent = data.checked_at ? `Checked ${ago(data.checked_at)} · ${open} open leads from ${data.sources_ok ?? '?'} sources` : '';
-  const seen = read(K.visit, null);
-  const marks = seen && typeof seen === 'object' ? seen : {previous: null, current: null};
+  $('checked').textContent = data.checked_at ? `Last checked ${ago(data.checked_at)} · ${open} open calls` : '';
+  if (data.sources?.length) $('how-sources').textContent = String(data.sources.length + manual.length);
+  const seen = read(K.visit, null), marks = seen && typeof seen === 'object' ? seen : {previous: null, current: null};
   if (data.checked_at && marks.current !== data.checked_at) { marks.previous = marks.current; marks.current = data.checked_at; write(K.visit, marks); }
   lastVisit = marks.previous;
-  if (lastVisit) $('only-new-label').textContent = `New since your last visit (${data.items.filter(i => i.first_seen > lastVisit && i.status !== 'closed').length})`;
+  if (lastVisit) $('only-new-label').textContent = `Only new since my last visit (${data.items.filter(i => i.first_seen > lastVisit && i.status !== 'closed').length})`;
   else $('only-new-wrap').hidden = true;
-  const how = $('how'), folded = read('opps.howFolded', false);
-  const setHow = f => { how.classList.toggle('folded', f); $('how-toggle').textContent = f ? 'Show' : 'Hide'; $('how-toggle').setAttribute('aria-expanded', String(!f)); };
-  setHow(folded); $('how-toggle').onclick = () => { const f = !how.classList.contains('folded'); write('opps.howFolded', f); setHow(f); };
-  if (data.sources?.length) $('how-sources').textContent = `${data.sources.length + manual.length - 1} other`;
-  wire(); drawSync(); draw();
+  wire(); drawSync();
+  const examples = $('s-examples');
+  for (const pr of presets) examples.append(el('button', {type: 'button', className: 'link', textContent: pr.name, onclick: () => { closeSetup(); setActive('preset:' + pr.id); }}));
+  examples.append(el('button', {type: 'button', className: 'link', textContent: 'Everything', onclick: () => { closeSetup(); setActive('all'); }}));
+  if (shared?.name === 'A friend') shared.name = 'a friend';
+  draw();
+  if (!active) openSetup();
   if (db) pull().then(() => { draw(); status('Synced with Dropbox.'); }).catch(e => status(e.message, true));
 }
 

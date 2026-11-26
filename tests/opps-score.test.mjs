@@ -5,7 +5,8 @@ import {match, index, regionPoints, daysLeft, money, ics, encodeProfile, decodeP
 
 const read = p => JSON.parse(readFileSync(new URL(p, import.meta.url)));
 const fx = read('./fixtures/opps-score.json');
-const idx = index(read('../data/skills.json'));
+const tree = read('../data/skills.json');
+const idx = index(tree);
 
 test('page scores and reasons match the weekly email exactly', () => {
   for (const [pid, p] of Object.entries(fx.profiles)) for (const it of fx.items) assert.deepEqual(match(it, p, idx), fx.expected[pid][it.id], `${pid}/${it.id}`);
@@ -17,7 +18,13 @@ test('the same call ranks differently for different people', () => {
   assert.ok(s('projects', 'b') > s('projects', 'a'));
   assert.ok(s('dancer', 'g') > s('practice', 'g'));
   assert.equal(s('dancer', 'd'), 0, 'free-to-enter only hides fee-charging calls');
-  assert.ok(s('practice', 'a') > s('precise', 'a'), 'related breadth adds family matches');
+  assert.ok(s('practice', 'a') >= s('precise', 'a'));
+  const one = {skills: ['photobook'], based: [], as: 'both', stage: 'any', kinds: []};
+  const generic = {id: 'x', title: 'Photography open call 2027', summary: 'For photographers working in any genre.', region: 'International', kinds: ['open_call'], status: 'open'};
+  assert.ok(match(generic, {...one, breadth: 1}, idx).score > match(generic, {...one, breadth: 0}, idx).score, 'related breadth adds family matches');
+  const photo = tree.families.find(f => f.id === 'photo').skills.map(x => x.id);
+  assert.ok(match(generic, {...one, skills: photo, breadth: 0}, idx).score >= 22, 'ticking the whole family makes its own words a direct hit');
+  assert.equal(match({...generic, title: 'Solar photovoltaics pilot lines', summary: ''}, {...one, skills: photo, breadth: 1}, idx).reasons.includes('Photography'), false, 'photo does not match photovoltaics');
 });
 
 test('regions: home funders up, other countries down', () => {

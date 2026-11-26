@@ -47,8 +47,14 @@ export function match(item, profile, idx) {
   out.reasons.push(...leafHits.slice(0, 3).map(l => l.name));
   if (leafHits.length) matched = true;
   const fams = [...new Set(sel.map(l => l.family))];
+  // Ticking a whole family ("I'm a photographer") makes the family's own words a direct hit.
+  const ids = new Set(profile.skills || []);
+  const whole = fams.filter(f => (idx.families.get(f)?.skills || []).every(x => ids.has(x.id)));
+  const wholeHits = whole.filter(f => !leafHits.some(l => l.family === f) && hit(text, idx.families.get(f)?.keywords));
+  s += Math.min(wholeHits.length, 2) * 22;
+  if (wholeHits.length) { matched = true; out.reasons.push(...wholeHits.slice(0, 2).map(f => idx.families.get(f).name)); }
   if (breadth >= 1) {
-    const famHits = fams.filter(f => !leafHits.some(l => l.family === f) && hit(text, idx.families.get(f)?.keywords));
+    const famHits = fams.filter(f => !whole.includes(f) && !leafHits.some(l => l.family === f) && hit(text, idx.families.get(f)?.keywords));
     s += Math.min(famHits.length, 2) * 10;
     if (famHits.length) { matched = true; out.reasons.push(...famHits.slice(0, 2).map(f => idx.families.get(f).name)); }
   }

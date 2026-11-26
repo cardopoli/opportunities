@@ -236,7 +236,7 @@
  "expected": {
   "practice": {
    "a": {
-    "score": 84,
+    "score": 96,
     "reasons": [
      "Documentary & photojournalism",
      "Photobooks & publishing",
@@ -298,7 +298,7 @@
     ]
    },
    "b": {
-    "score": 56,
+    "score": 68,
     "reasons": [
      "Rural places & borghi",
      "Community & participatory",
@@ -316,7 +316,7 @@
     ]
    },
    "e": {
-    "score": 56,
+    "score": 68,
     "reasons": [
      "Cross-border & European cooperation",
      "Heritage & archives",
@@ -336,7 +336,7 @@
     ]
    },
    "h": {
-    "score": 10,
+    "score": 34,
     "reasons": [
      "Heritage & archives",
      "Community & participatory",
@@ -409,10 +409,11 @@
   },
   "precise": {
    "a": {
-    "score": 74,
+    "score": 96,
     "reasons": [
      "Documentary & photojournalism",
      "Photobooks & publishing",
+     "Publishing & books",
      "near you",
      "free to enter"
     ]

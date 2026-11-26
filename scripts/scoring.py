@@ -67,8 +67,16 @@ def match(item: dict, profile: dict, idx: Index) -> dict:
     if leaf_hits:
         matched = True
     fams = list(dict.fromkeys(l['family'] for l in sel))
+    # Ticking a whole family ("I'm a photographer") makes the family's own words a direct hit.
+    ids = set(profile.get('skills') or [])
+    whole = [f for f in fams if all(x['id'] in ids for x in idx.families.get(f, {}).get('skills', []))]
+    whole_hits = [f for f in whole if not any(l['family'] == f for l in leaf_hits) and hit(text, idx.families.get(f, {}).get('keywords'))]
+    s += min(len(whole_hits), 2) * 22
+    if whole_hits:
+        matched = True
+        out['reasons'] += [idx.families[f]['name'] for f in whole_hits[:2]]
     if breadth >= 1:
-        fam_hits = [f for f in fams if not any(l['family'] == f for l in leaf_hits) and hit(text, idx.families.get(f, {}).get('keywords'))]
+        fam_hits = [f for f in fams if f not in whole and not any(l['family'] == f for l in leaf_hits) and hit(text, idx.families.get(f, {}).get('keywords'))]
         s += min(len(fam_hits), 2) * 10
         if fam_hits:
             matched = True
