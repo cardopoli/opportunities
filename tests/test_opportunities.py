@@ -338,3 +338,18 @@ class Eligibility(unittest.TestCase):
         for t, exp in cases.items():
             d = c.details_from_html(f'<html><body><p>{t}</p></body></html>', 'u', TODAY)
             self.assertEqual((d['fee'], d['applicants'], d['early_career']), exp, t)
+
+
+class Tidy(unittest.TestCase):
+    def test_listing_titles(self):
+        for t in ['Other open calls', 'Grants & Stipends', 'Art Competitions', 'What we fund', 'Fund finder', 'Javni razpisi in pozivi', 'Razpisi in pozivi', 'Bandi aperti']:
+            self.assertTrue(c.is_listing_title(t), t)
+        for t in ['Connect Fund', 'Youth Fund', 'Open Call Arcus', 'n-Space Fellowship', 'Snowball Art Award', 'Bando Welfare 2026']:
+            self.assertFalse(c.is_listing_title(t), t)
+
+    def test_title_deadline_wins(self):
+        today = dt.date(2026, 11, 26)
+        item = {'title': 'Bando abitare possibile scad 31 marzo 2026', 'deadline': '2026-12-31'}
+        self.assertEqual(c.status_of(item, today), 'closed')
+        self.assertEqual(c.status_of({'title': 'Open call, deadline 15 January 2027', 'deadline': '2027-01-15'}, today), 'open')
+

@@ -174,6 +174,16 @@ def parse_page(html: str) -> Page:
     return p
 
 
+# Category and index pages that list calls rather than being one ("Other open calls", "Razpisi in pozivi").
+LISTING_TITLE = re.compile(r"^(other |all |more |current |latest |open |new )?(open calls?|calls?|opportunit(y|ies)|grants?( (&|and) (stipends?|bursar(y|ies)))?|art competitions?|competitions?|residenc(y|ies)|awards?|prizes?|funding( opportunities)?|what we fund|fund finder|find (a|the right) (fund|grant)[a-z ]*|bandi( aperti| e avvisi)?|avvisi( pubblici)?|opportunità|(javni )?razpisi( in pozivi)?|pozivi|natečaji)$", re.I)
+# A deadline written in the title itself, e.g. "Bando abitare possibile scad 31 marzo 2026".
+TITLE_DEADLINE = re.compile(r"\b(scad\.?|scadenza|deadline|closes|closing|rok|entro( il)?)\b", re.I)
+
+
+def is_listing_title(title: str) -> bool:
+    return bool(LISTING_TITLE.match(re.sub(r"\s+", " ", title.strip(" .:-|"))))
+
+
 def listing_links(html: str, base: str, source: dict) -> list[dict]:
     """Opportunity links from a listing page."""
     page = parse_page(html)
@@ -203,7 +213,7 @@ def listing_links(html: str, base: str, source: dict) -> list[dict]:
         last = parts.path.rstrip('/').rsplit('/', 1)[-1]
         if source.get('min_slug') and len(last) < source['min_slug']:
             continue  # category or index page on an aggregator
-        if GENERIC.match(title) or len(title) < 10:
+        if GENERIC.match(title) or len(title) < 10 or is_listing_title(title):
             if last.count('-') < 2 and not last.lower().endswith('.pdf'):
                 continue
             title = slug_title(last); from_page = True
@@ -528,6 +538,11 @@ def collect_source(net: Net, source: dict, today: dt.date):
 def status_of(item: dict, today: dt.date) -> str:
     if item.get('closed_notice'):
         return 'closed'
+    title = item.get('title', '')
+    if TITLE_DEADLINE.search(title):
+        named = [day for _, day in find_dates(title)]
+        if named and max(named) < today:
+            return 'closed'  # the title's own deadline has passed, whatever else the page mentions
     d = item.get('deadline')
     if d:
         return 'closed' if dt.date.fromisoformat(d) < today else 'open'
@@ -574,6 +589,8 @@ def finalise(items: dict, today: dt.date) -> list[dict]:
         it['kinds'] = sorted(set(classify(it.get('title', '') + ' ' + it.get('summary', '')) + [k for k in it.get('kinds_text', []) if k != 'other'])) or ['other']
         if len(it['kinds']) > 1 and 'other' in it['kinds']:
             it['kinds'].remove('other')
+        if is_listing_title(it.get('title', '')):
+            continue  # an index page, not a call
         it['status'] = status_of(it, today)
         last_seen = dt.date.fromisoformat(it.get('last_seen', today.isoformat())[:10])
         if not it.get('present', True) and (today - last_seen).days > KEEP_GONE_DAYS:
