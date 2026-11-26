@@ -1,0 +1,869 @@
+{
+ "_note": "Skill tree for Opportunities matching. Families > skills, each with keywords in English, Italian and Slovenian (part-words work: 'fotograf' matches fotografia/fotografija). 'related' links families for broad matching. 'open' words mean a call welcomes all disciplines.",
+ "open": [
+  "all disciplines",
+  "any discipline",
+  "all art forms",
+  "all artforms",
+  "any medium",
+  "all media",
+  "multidisciplinary",
+  "interdisciplinary",
+  "cross-disciplinary",
+  "transdisciplinary",
+  "tutte le discipline",
+  "multidisciplinar",
+  "interdisciplinar",
+  "vse discipline",
+  "vsa področja"
+ ],
+ "families": [
+  {
+   "id": "visual",
+   "name": "Visual arts",
+   "keywords": [
+    "visual art",
+    "visual artist",
+    "fine art",
+    "contemporary art",
+    "arti visive",
+    "arte contemporanea",
+    "vizualn",
+    "sodobna umetnost",
+    "artist"
+   ],
+   "related": [
+    "photo",
+    "design",
+    "curating"
+   ],
+   "skills": [
+    {
+     "id": "painting",
+     "name": "Painting & drawing",
+     "keywords": [
+      "painting",
+      "painter",
+      "drawing",
+      "pittura",
+      "disegno",
+      "slikarstv",
+      "risb"
+     ]
+    },
+    {
+     "id": "sculpture",
+     "name": "Sculpture & installation",
+     "keywords": [
+      "sculpture",
+      "installation",
+      "scultura",
+      "installazion",
+      "kipar",
+      "instalacij"
+     ]
+    },
+    {
+     "id": "printmaking",
+     "name": "Printmaking & illustration",
+     "keywords": [
+      "printmaking",
+      "print studio",
+      "illustrat",
+      "incisione",
+      "grafica d'arte",
+      "grafik",
+      "ilustracij",
+      "comic"
+     ]
+    },
+    {
+     "id": "public_art",
+     "name": "Public art",
+     "keywords": [
+      "public art",
+      "arte pubblica",
+      "murals",
+      "mural",
+      "javna umetnost",
+      "site-specific"
+     ]
+    },
+    {
+     "id": "digital_art",
+     "name": "Digital & new media art",
+     "keywords": [
+      "digital art",
+      "new media",
+      "media art",
+      "net art",
+      "arte digitale",
+      "nuovi media",
+      "digitalna umetnost",
+      "generative"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "photo",
+   "name": "Photography",
+   "keywords": [
+    "photograph",
+    "fotograf",
+    "photo",
+    "lens-based",
+    "fotografij"
+   ],
+   "related": [
+    "visual",
+    "film",
+    "publishing"
+   ],
+   "skills": [
+    {
+     "id": "photo_documentary",
+     "name": "Documentary & photojournalism",
+     "keywords": [
+      "documentary photo",
+      "photojournalis",
+      "fotogiornalis",
+      "fotografia documentaria",
+      "reportage",
+      "dokumentarna fotografija",
+      "visual storytell"
+     ]
+    },
+    {
+     "id": "photo_fine_art",
+     "name": "Fine-art & conceptual photography",
+     "keywords": [
+      "fine art photograph",
+      "art photograph",
+      "fotografia d'autore",
+      "fotografia artistica",
+      "conceptual photograph"
+     ]
+    },
+    {
+     "id": "photobook",
+     "name": "Photobooks & publishing",
+     "keywords": [
+      "photobook",
+      "photo book",
+      "photo-book",
+      "libro fotografico",
+      "fotoknjig",
+      "dummy"
+     ]
+    },
+    {
+     "id": "photo_archive",
+     "name": "Archives & vernacular photography",
+     "keywords": [
+      "photographic archive",
+      "archivio fotografico",
+      "vernacular",
+      "found photograph",
+      "fotografski arhiv"
+     ]
+    },
+    {
+     "id": "photo_architecture",
+     "name": "Architecture & landscape photography",
+     "keywords": [
+      "architectural photograph",
+      "landscape photograph",
+      "fotografia di architettura",
+      "fotografia di paesaggio",
+      "urban landscape"
+     ]
+    },
+    {
+     "id": "analogue",
+     "name": "Analogue & darkroom",
+     "keywords": [
+      "darkroom",
+      "analogue",
+      "analog",
+      "film photograph",
+      "camera oscura",
+      "pellicola",
+      "temnic"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "film",
+   "name": "Film & moving image",
+   "keywords": [
+    "film",
+    "moving image",
+    "cinema",
+    "video",
+    "audiovisual",
+    "audiovisiv",
+    "filmsk",
+    "avdiovizual"
+   ],
+   "related": [
+    "photo",
+    "sound",
+    "performance"
+   ],
+   "skills": [
+    {
+     "id": "documentary_film",
+     "name": "Documentary film",
+     "keywords": [
+      "documentary film",
+      "documentario",
+      "dokumentarni film",
+      "non-fiction film"
+     ]
+    },
+    {
+     "id": "artist_film",
+     "name": "Artist film & video art",
+     "keywords": [
+      "artist film",
+      "video art",
+      "videoarte",
+      "video umetnost",
+      "experimental film",
+      "moving-image"
+     ]
+    },
+    {
+     "id": "animation",
+     "name": "Animation",
+     "keywords": [
+      "animation",
+      "animazione",
+      "animiran"
+     ]
+    },
+    {
+     "id": "fiction_film",
+     "name": "Fiction & screenwriting",
+     "keywords": [
+      "screenwrit",
+      "feature film",
+      "short film",
+      "sceneggiatur",
+      "cortometragg",
+      "scenarij",
+      "kratki film"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "design",
+   "name": "Design & art direction",
+   "keywords": [
+    "design",
+    "designer",
+    "progettazione",
+    "oblikovanj"
+   ],
+   "related": [
+    "visual",
+    "architecture",
+    "digital"
+   ],
+   "skills": [
+    {
+     "id": "art_direction",
+     "name": "Art direction & creative direction",
+     "keywords": [
+      "art direction",
+      "art director",
+      "creative direction",
+      "creative director",
+      "direzione artistica",
+      "direzione creativa",
+      "kreativni direktor"
+     ]
+    },
+    {
+     "id": "graphic_design",
+     "name": "Graphic & type design",
+     "keywords": [
+      "graphic design",
+      "typograph",
+      "type design",
+      "grafica",
+      "graphic designer",
+      "grafično oblikovanje",
+      "visual identity"
+     ]
+    },
+    {
+     "id": "editorial",
+     "name": "Editorial & book design",
+     "keywords": [
+      "editorial design",
+      "book design",
+      "publication design",
+      "impaginazion",
+      "oblikovanje knjig"
+     ]
+    },
+    {
+     "id": "product_design",
+     "name": "Product & furniture design",
+     "keywords": [
+      "product design",
+      "furniture",
+      "industrial design",
+      "design del prodotto",
+      "industrijsko oblikovanje"
+     ]
+    },
+    {
+     "id": "fashion",
+     "name": "Fashion & textiles",
+     "keywords": [
+      "fashion",
+      "textile",
+      "tessil",
+      "moda",
+      "tekstil"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "digital",
+   "name": "Digital & interactive",
+   "keywords": [
+    "digital",
+    "interactive",
+    "technolog",
+    "digitale",
+    "digitaln"
+   ],
+   "related": [
+    "design",
+    "visual",
+    "sound"
+   ],
+   "skills": [
+    {
+     "id": "multimedia",
+     "name": "Multimedia & installation",
+     "keywords": [
+      "multimedia",
+      "immersive",
+      "projection",
+      "proiezion",
+      "multimedij",
+      "audiovisual installation"
+     ]
+    },
+    {
+     "id": "web_games",
+     "name": "Web, games & XR",
+     "keywords": [
+      "game",
+      "videogame",
+      "virtual reality",
+      "augmented reality",
+      " xr ",
+      "web-based",
+      "videogioc"
+     ]
+    },
+    {
+     "id": "creative_tech",
+     "name": "Creative tech & AI art",
+     "keywords": [
+      "creative technolog",
+      "creative coding",
+      "artificial intelligence",
+      "machine learning",
+      "intelligenza artificiale",
+      "umetna inteligenca"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sound",
+   "name": "Music & sound",
+   "keywords": [
+    "music",
+    "sound",
+    "musica",
+    "suono",
+    "glasb",
+    "zvok"
+   ],
+   "related": [
+    "performance",
+    "film",
+    "digital"
+   ],
+   "skills": [
+    {
+     "id": "composition",
+     "name": "Composition & performance",
+     "keywords": [
+      "composer",
+      "composition",
+      "musician",
+      "compositor",
+      "composizion",
+      "skladatelj",
+      "glasbenik"
+     ]
+    },
+    {
+     "id": "sound_art",
+     "name": "Sound art & field recording",
+     "keywords": [
+      "sound art",
+      "sound installation",
+      "field recording",
+      "arte sonora",
+      "zvočna umetnost"
+     ]
+    },
+    {
+     "id": "dj_electronic",
+     "name": "Electronic music & DJ",
+     "keywords": [
+      "electronic music",
+      " dj",
+      "club culture",
+      "musica elettronica",
+      "elektronska glasba"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "performance",
+   "name": "Performance & live arts",
+   "keywords": [
+    "performance",
+    "performing arts",
+    "live art",
+    "spettacolo dal vivo",
+    "uprizoritven"
+   ],
+   "related": [
+    "sound",
+    "film",
+    "community"
+   ],
+   "skills": [
+    {
+     "id": "dance",
+     "name": "Dance & choreography",
+     "keywords": [
+      "dance",
+      "choreograph",
+      "danza",
+      "coreograf",
+      "ples",
+      "koreograf"
+     ]
+    },
+    {
+     "id": "theatre",
+     "name": "Theatre",
+     "keywords": [
+      "theatre",
+      "theater",
+      "teatro",
+      "gledališ",
+      "playwright",
+      "drammaturg"
+     ]
+    },
+    {
+     "id": "live_art",
+     "name": "Performance art",
+     "keywords": [
+      "performance art",
+      "live art",
+      "arte performativa",
+      "performans"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "writing",
+   "name": "Writing & literature",
+   "keywords": [
+    "writing",
+    "writer",
+    "literature",
+    "literary",
+    "scrittur",
+    "letteratur",
+    "literatur",
+    "pisatelj"
+   ],
+   "related": [
+    "publishing",
+    "research",
+    "performance"
+   ],
+   "skills": [
+    {
+     "id": "fiction",
+     "name": "Fiction & poetry",
+     "keywords": [
+      "fiction",
+      "poetry",
+      "novel",
+      "poesia",
+      "romanzo",
+      "poezij",
+      "roman "
+     ]
+    },
+    {
+     "id": "nonfiction",
+     "name": "Non-fiction & essay",
+     "keywords": [
+      "non-fiction",
+      "nonfiction",
+      "essay",
+      "saggio",
+      "esej",
+      "journalism",
+      "giornalism"
+     ]
+    },
+    {
+     "id": "translation",
+     "name": "Translation",
+     "keywords": [
+      "translation",
+      "translator",
+      "traduzion",
+      "prevod"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "publishing",
+   "name": "Publishing & books",
+   "keywords": [
+    "publishing",
+    "publisher",
+    "book",
+    "editoria",
+    "casa editrice",
+    "založ",
+    "knjig"
+   ],
+   "related": [
+    "writing",
+    "photo",
+    "design"
+   ],
+   "skills": [
+    {
+     "id": "artist_books",
+     "name": "Artist books & zines",
+     "keywords": [
+      "artist book",
+      "artists' book",
+      "zine",
+      "fanzine",
+      "libro d'artista",
+      "self-publish"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "architecture",
+   "name": "Architecture & spatial practice",
+   "keywords": [
+    "architecture",
+    "architect",
+    "spatial",
+    "architettura",
+    "arhitektur"
+   ],
+   "related": [
+    "design",
+    "heritage",
+    "community"
+   ],
+   "skills": [
+    {
+     "id": "architecture_practice",
+     "name": "Architecture & urbanism",
+     "keywords": [
+      "urbanism",
+      "urban design",
+      "urbanistica",
+      "urbanizem",
+      "architectural"
+     ]
+    },
+    {
+     "id": "landscape_arch",
+     "name": "Landscape & environment",
+     "keywords": [
+      "landscape architecture",
+      "landscape",
+      "paesaggio",
+      "krajin",
+      "ecolog",
+      "climate",
+      "environment",
+      "ambiente",
+      "okolj"
+     ]
+    },
+    {
+     "id": "housing",
+     "name": "Housing & the built environment",
+     "keywords": [
+      "housing",
+      "social housing",
+      "modernis",
+      "abitare",
+      "edilizia",
+      "stanovanj",
+      "built environment",
+      "brutalis"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "heritage",
+   "name": "Heritage & archives",
+   "keywords": [
+    "heritage",
+    "patrimonio",
+    "dedišč",
+    "cultural heritage",
+    "beni culturali",
+    "kulturna dediščina"
+   ],
+   "related": [
+    "architecture",
+    "community",
+    "research"
+   ],
+   "skills": [
+    {
+     "id": "archives",
+     "name": "Archives & collections",
+     "keywords": [
+      "archive",
+      "archival",
+      "collection",
+      "archivio",
+      "collezion",
+      "arhiv",
+      "museum",
+      "museo",
+      "muzej"
+     ]
+    },
+    {
+     "id": "rural",
+     "name": "Rural places & borghi",
+     "keywords": [
+      "rural",
+      "borg",
+      "village",
+      "borgo",
+      "aree interne",
+      "mountain",
+      "montagn",
+      "podeželj",
+      "vas ",
+      "leader "
+     ]
+    },
+    {
+     "id": "restoration",
+     "name": "Restoration & historic buildings",
+     "keywords": [
+      "restoration",
+      "restauro",
+      "historic building",
+      "edifici storici",
+      "obnova",
+      "conservation"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "curating",
+   "name": "Curating & producing",
+   "keywords": [
+    "curat",
+    "producer",
+    "producing",
+    "curatela",
+    "curator",
+    "kustos",
+    "producent"
+   ],
+   "related": [
+    "community",
+    "research",
+    "performance"
+   ],
+   "skills": [
+    {
+     "id": "curating_ex",
+     "name": "Curating exhibitions",
+     "keywords": [
+      "curator",
+      "curatorial",
+      "exhibition",
+      "mostra",
+      "razstav",
+      "curatela"
+     ]
+    },
+    {
+     "id": "festivals",
+     "name": "Festivals & public programmes",
+     "keywords": [
+      "festival",
+      "public programme",
+      "public program",
+      "rassegn",
+      "festivali",
+      "events programme"
+     ]
+    },
+    {
+     "id": "arts_management",
+     "name": "Arts management & organisations",
+     "keywords": [
+      "arts management",
+      "capacity building",
+      "organisational development",
+      "gestione culturale",
+      "kulturni menedžment",
+      "operating grant",
+      "core funding"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "community",
+   "name": "Community & participatory",
+   "keywords": [
+    "community",
+    "participat",
+    "social practice",
+    "comunit",
+    "skupnost",
+    "socially engaged"
+   ],
+   "related": [
+    "heritage",
+    "curating",
+    "research"
+   ],
+   "skills": [
+    {
+     "id": "participatory",
+     "name": "Participatory & socially engaged art",
+     "keywords": [
+      "socially engaged",
+      "participatory art",
+      "co-creation",
+      "arte partecipata",
+      "sodelovaln"
+     ]
+    },
+    {
+     "id": "education",
+     "name": "Education & learning",
+     "keywords": [
+      "education",
+      "learning",
+      "workshop",
+      "school",
+      "educazion",
+      "didattic",
+      "izobraževanj",
+      "youth",
+      "giovani",
+      "mlad"
+     ]
+    },
+    {
+     "id": "cross_border",
+     "name": "Cross-border & European cooperation",
+     "keywords": [
+      "cross-border",
+      "transfrontalier",
+      "čezmej",
+      "interreg",
+      "european cooperation",
+      "cooperation project",
+      "partnership"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "research",
+   "name": "Research & residencies of thought",
+   "keywords": [
+    "research",
+    "ricerca",
+    "raziskov",
+    "fellowship",
+    "phd",
+    "academic"
+   ],
+   "related": [
+    "writing",
+    "heritage",
+    "curating"
+   ],
+   "skills": [
+    {
+     "id": "artistic_research",
+     "name": "Artistic research",
+     "keywords": [
+      "artistic research",
+      "practice-based research",
+      "ricerca artistica",
+      "umetniško raziskovanje"
+     ]
+    },
+    {
+     "id": "craft",
+     "name": "Craft & making",
+     "keywords": [
+      "craft",
+      "ceramic",
+      "glass",
+      "wood",
+      "artigian",
+      "ceramica",
+      "keramik",
+      "rokodel",
+      "marble"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,464 @@
+{
+ "profiles": {
+  "practice": {
+   "id": "practice",
+   "name": "Photography & art direction",
+   "skills": [
+    "photo_documentary",
+    "photo_fine_art",
+    "photobook",
+    "photo_architecture",
+    "photo_archive",
+    "art_direction",
+    "multimedia",
+    "housing",
+    "artist_books"
+   ],
+   "breadth": 1,
+   "based": [
+    "UK",
+    "IT-FVG",
+    "SI"
+   ],
+   "as": "both",
+   "stage": "established",
+   "kinds": [
+    "residency",
+    "open_call",
+    "commission",
+    "prize",
+    "fellowship",
+    "grant"
+   ],
+   "free_only": false,
+   "exclude": []
+  },
+  "projects": {
+   "id": "projects",
+   "name": "Culture, heritage & rural projects",
+   "skills": [
+    "rural",
+    "restoration",
+    "archives",
+    "festivals",
+    "participatory",
+    "cross_border",
+    "education",
+    "arts_management",
+    "housing"
+   ],
+   "breadth": 1,
+   "based": [
+    "IT-FVG",
+    "SI"
+   ],
+   "as": "organisation",
+   "stage": "any",
+   "kinds": [
+    "grant",
+    "tender",
+    "commission"
+   ],
+   "free_only": false,
+   "exclude": []
+  },
+  "dancer": {
+   "name": "Dance & choreography, UK",
+   "skills": [
+    "dance",
+    "live_art"
+   ],
+   "breadth": 2,
+   "based": [
+    "UK"
+   ],
+   "as": "individual",
+   "stage": "emerging",
+   "kinds": [],
+   "free_only": true,
+   "exclude": []
+  },
+  "precise": {
+   "id": "practice",
+   "name": "precise",
+   "skills": [
+    "photo_documentary",
+    "photo_fine_art",
+    "photobook",
+    "photo_architecture",
+    "photo_archive",
+    "art_direction",
+    "multimedia",
+    "housing",
+    "artist_books"
+   ],
+   "breadth": 0,
+   "based": [
+    "UK",
+    "IT-FVG",
+    "SI"
+   ],
+   "as": "both",
+   "stage": "established",
+   "kinds": [
+    "residency",
+    "open_call",
+    "commission",
+    "prize",
+    "fellowship",
+    "grant"
+   ],
+   "free_only": false,
+   "exclude": []
+  }
+ },
+ "items": [
+  {
+   "id": "a",
+   "title": "Photobook residency in Slovenia 2027",
+   "summary": "For documentary photographers; stipend included",
+   "source": "TransArtists",
+   "region": "SI",
+   "kinds": [
+    "residency"
+   ],
+   "deadline": "2027-01-15",
+   "amount": {
+    "max": 3000,
+    "currency": "EUR"
+   },
+   "status": "open",
+   "applicants": "individuals",
+   "fee": false
+  },
+  {
+   "id": "b",
+   "title": "Bando per la rigenerazione dei borghi rurali",
+   "summary": "Contributi per progetti culturali e di comunità",
+   "source": "Regione FVG - Cultura",
+   "region": "IT-FVG",
+   "kinds": [
+    "grant"
+   ],
+   "status": "unknown",
+   "applicants": "organisations"
+  },
+  {
+   "id": "c",
+   "title": "Clinical research fellowship in oncology",
+   "summary": "",
+   "source": "EU",
+   "region": "EU",
+   "kinds": [
+    "fellowship"
+   ],
+   "deadline": "2027-02-01",
+   "status": "open"
+  },
+  {
+   "id": "d",
+   "title": "Open call: visual art prize",
+   "summary": "Award for contemporary art, all disciplines welcome",
+   "source": "PhMuseum",
+   "region": "International",
+   "kinds": [
+    "prize",
+    "open_call"
+   ],
+   "deadline": "2026-12-20",
+   "status": "open",
+   "fee": true
+  },
+  {
+   "id": "e",
+   "title": "Interreg Italia-Slovenija small projects fund for cross-border heritage",
+   "summary": "",
+   "source": "Interreg",
+   "region": "IT-SI",
+   "kinds": [
+    "grant"
+   ],
+   "status": "rolling",
+   "applicants": "organisations"
+  },
+  {
+   "id": "f",
+   "title": "Prize that has closed",
+   "summary": "photography",
+   "source": "X",
+   "region": "UK",
+   "kinds": [
+    "prize"
+   ],
+   "deadline": "2026-01-01",
+   "status": "closed"
+  },
+  {
+   "id": "g",
+   "title": "Choreography commission for emerging dancers",
+   "summary": "Open to UK-based dance artists under 30",
+   "source": "Arts Council",
+   "region": "UK",
+   "kinds": [
+    "commission"
+   ],
+   "deadline": "2027-03-01",
+   "status": "open",
+   "early_career": true,
+   "applicants": "individuals",
+   "fee": false
+  },
+  {
+   "id": "h",
+   "title": "National Lottery Heritage Grants",
+   "summary": "Grants for heritage and community projects",
+   "source": "Heritage Fund",
+   "region": "UK",
+   "kinds": [
+    "grant"
+   ],
+   "status": "rolling",
+   "applicants": "organisations"
+  },
+  {
+   "id": "i",
+   "title": "Interdisciplinary residency at a castle",
+   "summary": "Open to all disciplines",
+   "source": "Res Artis",
+   "region": "International",
+   "kinds": [
+    "residency"
+   ],
+   "deadline": "2027-02-10",
+   "status": "open"
+  }
+ ],
+ "expected": {
+  "practice": {
+   "a": {
+    "score": 84,
+    "reasons": [
+     "Documentary & photojournalism",
+     "Photobooks & publishing",
+     "Publishing & books",
+     "near you",
+     "free to enter"
+    ]
+   },
+   "b": {
+    "score": 15,
+    "reasons": [
+     "near you"
+    ]
+   },
+   "c": {
+    "score": 0,
+    "reasons": []
+   },
+   "d": {
+    "score": 15,
+    "reasons": []
+   },
+   "e": {
+    "score": 15,
+    "reasons": [
+     "near you"
+    ]
+   },
+   "f": {
+    "score": 0,
+    "reasons": []
+   },
+   "g": {
+    "score": 12,
+    "reasons": [
+     "near you",
+     "early-career only",
+     "free to enter"
+    ]
+   },
+   "h": {
+    "score": 15,
+    "reasons": [
+     "near you"
+    ]
+   },
+   "i": {
+    "score": 15,
+    "reasons": []
+   }
+  },
+  "projects": {
+   "a": {
+    "score": 0,
+    "reasons": [
+     "near you",
+     "for individuals",
+     "free to enter"
+    ]
+   },
+   "b": {
+    "score": 56,
+    "reasons": [
+     "Rural places & borghi",
+     "Community & participatory",
+     "near you"
+    ]
+   },
+   "c": {
+    "score": 0,
+    "reasons": []
+   },
+   "d": {
+    "score": 22,
+    "reasons": [
+     "Archives & collections"
+    ]
+   },
+   "e": {
+    "score": 56,
+    "reasons": [
+     "Cross-border & European cooperation",
+     "Heritage & archives",
+     "near you"
+    ]
+   },
+   "f": {
+    "score": 0,
+    "reasons": []
+   },
+   "g": {
+    "score": 0,
+    "reasons": [
+     "may need you based elsewhere",
+     "for individuals",
+     "free to enter"
+    ]
+   },
+   "h": {
+    "score": 10,
+    "reasons": [
+     "Heritage & archives",
+     "Community & participatory",
+     "may need you based elsewhere"
+    ]
+   },
+   "i": {
+    "score": 0,
+    "reasons": []
+   }
+  },
+  "dancer": {
+   "a": {
+    "score": 0,
+    "reasons": [
+     "may need you based elsewhere",
+     "free to enter"
+    ]
+   },
+   "b": {
+    "score": 0,
+    "reasons": [
+     "Community & participatory",
+     "may need you based elsewhere",
+     "for organisations"
+    ]
+   },
+   "c": {
+    "score": 0,
+    "reasons": []
+   },
+   "d": {
+    "score": 0,
+    "reasons": []
+   },
+   "e": {
+    "score": 0,
+    "reasons": [
+     "Community & participatory",
+     "may need you based elsewhere",
+     "for organisations"
+    ]
+   },
+   "f": {
+    "score": 0,
+    "reasons": []
+   },
+   "g": {
+    "score": 39,
+    "reasons": [
+     "Dance & choreography",
+     "near you",
+     "free to enter"
+    ]
+   },
+   "h": {
+    "score": 0,
+    "reasons": [
+     "Community & participatory",
+     "near you",
+     "for organisations"
+    ]
+   },
+   "i": {
+    "score": 22,
+    "reasons": [
+     "open to all disciplines"
+    ]
+   }
+  },
+  "precise": {
+   "a": {
+    "score": 74,
+    "reasons": [
+     "Documentary & photojournalism",
+     "Photobooks & publishing",
+     "near you",
+     "free to enter"
+    ]
+   },
+   "b": {
+    "score": 15,
+    "reasons": [
+     "near you"
+    ]
+   },
+   "c": {
+    "score": 0,
+    "reasons": []
+   },
+   "d": {
+    "score": 15,
+    "reasons": []
+   },
+   "e": {
+    "score": 15,
+    "reasons": [
+     "near you"
+    ]
+   },
+   "f": {
+    "score": 0,
+    "reasons": []
+   },
+   "g": {
+    "score": 12,
+    "reasons": [
+     "near you",
+     "early-career only",
+     "free to enter"
+    ]
+   },
+   "h": {
+    "score": 15,
+    "reasons": [
+     "near you"
+    ]
+   },
+   "i": {
+    "score": 15,
+    "reasons": []
+   }
+  }
+ }
+}

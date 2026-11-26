@@ -1,0 +1,67 @@
+{
+ "_note": "Preset profiles for Opportunities. Anyone can build their own on the page (skills from data/opportunity-skills.json) and share it as a link. breadth: 0 precise, 1 related, 2 broad. based: UK, IE, IT, IT-FVG, SI, EU, OTHER. as: individual, organisation, both. stage: any, emerging, established. kinds: residency, open_call, commission, prize, fellowship, grant, tender, training (empty = all).",
+ "presets": [
+  {
+   "id": "practice",
+   "name": "Photography & art direction",
+   "skills": [
+    "photo_documentary",
+    "photo_fine_art",
+    "photobook",
+    "photo_architecture",
+    "photo_archive",
+    "art_direction",
+    "multimedia",
+    "housing",
+    "artist_books"
+   ],
+   "breadth": 1,
+   "based": [
+    "UK",
+    "IT-FVG",
+    "SI"
+   ],
+   "as": "both",
+   "stage": "established",
+   "kinds": [
+    "residency",
+    "open_call",
+    "commission",
+    "prize",
+    "fellowship",
+    "grant"
+   ],
+   "free_only": false,
+   "exclude": []
+  },
+  {
+   "id": "projects",
+   "name": "Culture, heritage & rural projects",
+   "skills": [
+    "rural",
+    "restoration",
+    "archives",
+    "festivals",
+    "participatory",
+    "cross_border",
+    "education",
+    "arts_management",
+    "housing"
+   ],
+   "breadth": 1,
+   "based": [
+    "IT-FVG",
+    "SI"
+   ],
+   "as": "organisation",
+   "stage": "any",
+   "kinds": [
+    "grant",
+    "tender",
+    "commission"
+   ],
+   "free_only": false,
+   "exclude": []
+  }
+ ]
+}
