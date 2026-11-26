@@ -46,7 +46,7 @@ function profileName() {
   if (active?.startsWith('preset:')) return profile()?.name || 'an example';
   return 'you';
 }
-function saveMine(p) { mine = [{...defaults(), ...p, id: 'me', name: 'You'}, ...mine.slice(1)]; write(K.mine, mine); active = 'me'; write(K.active, active); }
+function saveMine(p) { mine = [{...defaults(), ...p, id: 'me', name: 'You', updatedAt: Date.now()}, ...mine.slice(1)]; write(K.mine, mine); active = 'me'; write(K.active, active); save(); }
 function setActive(key) { active = key; if (key !== 'shared') write(K.active, key); limit = PAGE; draw(); }
 
 // ---------- setup (two questions) ----------
@@ -85,11 +85,19 @@ function mergeStates(a, b) {
   for (const [id, p] of Object.entries(b.pipeline || {})) if (!out.pipeline[id] || (p.updatedAt || 0) > (out.pipeline[id].updatedAt || 0)) out.pipeline[id] = p;
   return out;
 }
-function takeProfiles(list) { if (Array.isArray(list) && list.length && !mine.length) { mine = list; write(K.mine, mine); if (!active) { active = 'me'; write(K.active, active); } } }
+function takeProfiles(list) {
+  // The newest answers win, so a change on your phone reaches your computer and the Monday email.
+  const theirs = Array.isArray(list) ? list[0] : null;
+  if (!theirs?.skills?.length || (mine[0]?.updatedAt || 0) >= (theirs.updatedAt || 0)) return false;
+  mine = [theirs, ...mine.slice(1)]; write(K.mine, mine);
+  if (!active || active === 'me') { active = 'me'; write(K.active, active); }
+  return true;
+}
 async function pull() {
   let remote = null;
   try { remote = JSON.parse(await db.download('/opportunities/pipeline.json')); } catch (e) { if (e.status && e.status !== 409) throw e; }
-  if (remote) { state = mergeStates(state, remote); write(K.state, state); takeProfiles(remote.profiles); }
+  if (remote) { state = mergeStates(state, remote); write(K.state, state); if (takeProfiles(remote.profiles) && !$('setup').hidden) closeSetup(); }
+  if (!remote || (mine[0]?.updatedAt || 0) > (remote.profiles?.[0]?.updatedAt || 0) || (state.updatedAt || 0) > (remote.updatedAt || 0)) await push();
 }
 async function push() { await db.upload('/opportunities/pipeline.json', JSON.stringify({...state, profiles: mine, v: 2}, null, 1)); status('Saved to Dropbox.'); }
 async function connect() {
@@ -117,7 +125,7 @@ function disconnect() {
   if (access) fetch('https://api.dropboxapi.com/2/auth/token/revoke', {method: 'POST', headers: {Authorization: 'Bearer ' + access}, referrerPolicy: 'no-referrer'}).catch(() => {});
   drawSync(); status('Dropbox disconnected. Everything stays in this browser.');
 }
-function drawSync() { $('sync-on').hidden = !db; $('sync-off').hidden = !!db; $('callback').textContent = callbackURL(location.href); $('app-key').value = read(K.key, ''); }
+function drawSync() { $('sync-on').hidden = !db; $('sync-off').hidden = !!db; $('email-keys').hidden = !db; $('callback').textContent = callbackURL(location.href); $('app-key').value = read(K.key, ''); }
 
 // ---------- leads ----------
 function filtered() {
@@ -288,6 +296,8 @@ function wire() {
   $('restore').onchange = e => { if (e.target.files[0]) importBackup(e.target.files[0]); e.target.value = ''; };
   $('connect').onclick = () => connect().catch(e => status(e.message, true));
   $('disconnect').onclick = disconnect;
+  $('copy-key1').onclick = () => copy(db?.session?.key || read(K.key, ''), 'Key 1 copied. In GitHub, add it as DROPBOX_APP_KEY.');
+  $('copy-key2').onclick = () => { const t = db?.session?.refresh_token; if (!t) return status('Connect Dropbox first.', true); copy(t, 'Key 2 copied. In GitHub, add it as DROPBOX_REFRESH_TOKEN. Keep it private, like a password.'); };
   const regions = [...new Set(data.items.map(i => i.region).filter(Boolean))].sort((a, b) => (REGION_LABEL[a] || a).localeCompare(REGION_LABEL[b] || b));
   $('region').append(...regions.map(r => el('option', {value: r, textContent: REGION_LABEL[r] || r})));
 }

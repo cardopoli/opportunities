@@ -17,4 +17,6 @@ jobs:
           DIGEST_GMAIL_APP_PASSWORD: ${{ secrets.DIGEST_GMAIL_APP_PASSWORD }}
           DIGEST_PEOPLE: ${{ secrets.DIGEST_PEOPLE }}
           DIGEST_TO: ${{ secrets.DIGEST_TO }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
         run: python3 scripts/digest.py

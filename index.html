@@ -177,7 +177,11 @@ code{font:12px ui-monospace,monospace;background:#f3f3f3;padding:1px 4px;word-br
  <details class="panel"><summary>Calendar, backup and syncing between devices</summary>
   <div class="row"><button id="ics-all" class="btn" type="button">All deadlines to my calendar</button><button id="backup" class="btn" type="button">Download a backup</button><label class="btn">Restore a backup<input id="restore" type="file" accept="application/json,.json" hidden></label></div>
   <p class="small">Your saved list lives in this browser. To have it on your phone and computer, connect your own Dropbox.</p>
-  <div id="sync-on" hidden><p class="small">Syncing with your Dropbox.</p><button id="disconnect" class="btn" type="button">Disconnect Dropbox</button></div>
+  <div id="sync-on" hidden><p class="small">Syncing with your Dropbox: your answers and Saved list follow you to every device where you connect.</p><button id="disconnect" class="btn" type="button">Disconnect Dropbox</button></div>
+  <div id="email-keys" hidden>
+   <p class="small"><b>Your own Monday email (site owner only).</b> Copy these two keys into the Opportunities repo on GitHub (Settings → Secrets and variables → Actions) and the Monday email follows your answers and lists your saved calls closing soon.</p>
+   <div class="row"><button id="copy-key1" class="btn" type="button">Copy key 1 (DROPBOX_APP_KEY)</button><button id="copy-key2" class="btn" type="button">Copy key 2 (DROPBOX_REFRESH_TOKEN)</button></div>
+  </div>
   <div id="sync-off"><button id="connect" class="btn" type="button">Connect Dropbox</button>
    <details id="sync-setup"><summary>One-off setup</summary>
     <p class="small">Create a free app at dropbox.com/developers/apps with <b>App folder</b> access and the <code>files.content.read</code>, <code>files.content.write</code> and <code>files.metadata.read</code> permissions. Under <b>Redirect URIs</b> add <code id="callback"></code>, then paste the app key here.</p>
